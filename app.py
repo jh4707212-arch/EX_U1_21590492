@@ -9,7 +9,14 @@ load_dotenv()
 app = Flask(__name__)
 
 # configuración base de datos
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Render usa postgres:// pero SQLAlchemy necesita postgresql://
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# si no hay variable usa sqlite local
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL or "sqlite:///blog.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -60,6 +67,11 @@ def add_post():
     categories = Category.query.all()
 
     return render_template('create_post.html', categories=categories)
+
+
+# crear tablas automáticamente en el servidor
+with app.app_context():
+    db.create_all()
 
 
 if __name__ == '__main__':
