@@ -1,62 +1,45 @@
-import os
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, render_template, request, redirect
 from flask_sqlalchemy import SQLAlchemy
+import os
 
 app = Flask(__name__)
 
-# usar la variable de entorno de Render
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# URL de tu base de datos PostgreSQL
+DATABASE_URL = "postgresql://libreria_pl1j_user:xkfwjqDgt5sQH4aJowvMMcdPGDnx9vYA@dpg-d6g8ojfgi27c738ruh8g-a/libreria_pl1j"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# MODELO CATEGORY
-class Category(db.Model):
-    __tablename__ = "categories"
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False, unique=True)
-
-# MODELO POST
+# Modelo de la tabla
 class Post(db.Model):
-    __tablename__ = "posts"
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey("categories.id"))
-    category = db.relationship("Category", backref=db.backref("posts", lazy=True))
+    titulo = db.Column(db.String(200))
+    contenido = db.Column(db.Text)
 
-# CREAR TABLAS AUTOMÁTICAMENTE
+# Crear tablas automáticamente al iniciar
 with app.app_context():
     db.create_all()
 
-# RUTA PRINCIPAL
+# Página principal
 @app.route("/")
 def index():
     posts = Post.query.all()
-    categories = Category.query.all()
-    return render_template("index.html", posts=posts, categories=categories)
+    return render_template("index.html", posts=posts)
 
-# CREAR POST
-@app.route("/post/new", methods=["GET","POST"])
-def add_post():
-    if request.method == "POST":
-        title = request.form["title"]
-        content = request.form["content"]
-        category_id = request.form.get("category_id")
+# Agregar noticia
+@app.route("/add", methods=["POST"])
+def add():
+    titulo = request.form["titulo"]
+    contenido = request.form["contenido"]
 
-        post = Post(
-            title=title,
-            content=content,
-            category_id=category_id
-        )
+    nuevo_post = Post(titulo=titulo, contenido=contenido)
+    db.session.add(nuevo_post)
+    db.session.commit()
 
-        db.session.add(post)
-        db.session.commit()
+    return redirect("/")
 
-        return redirect(url_for("index"))
-
-    categories = Category.query.all()
-    return render_template("create_post.html", categories=categories)
-
+# Ejecutar app localmente (Render usa Gunicorn)
 if __name__ == "__main__":
     app.run(debug=True)
