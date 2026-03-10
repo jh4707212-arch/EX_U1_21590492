@@ -2,11 +2,23 @@
 
 {% block content %}
 
+<h2>Agregar noticia</h2>
+
+<form action="/add" method="POST">
+    <input type="text" name="titulo" placeholder="Título" required>
+    <br><br>
+    <textarea name="contenido" placeholder="Contenido" required></textarea>
+    <br><br>
+    <button type="submit">Agregar noticia</button>
+</form>
+
+<hr>
+
 <h2>Noticias</h2>
 
 {% for post in posts %}
-    <h3>{{ post.title }}</h3>
-    <p>{{ post.content }}</p>
+    <h3>{{ post.titulo }}</h3>
+    <p>{{ post.contenido }}</p>
     <hr>
 {% endfor %}
 

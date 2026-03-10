@@ -4,21 +4,29 @@ import os
 
 app = Flask(__name__)
 
-# URL de tu base de datos PostgreSQL
-DATABASE_URL = "postgresql://libreria_pl1j_user:xkfwjqDgt5sQH4aJowvMMcdPGDnx9vYA@dpg-d6g8ojfgi27c738ruh8g-a/libreria_pl1j"
+# Render puede proporcionar DATABASE_URL automáticamente
+database_url = os.getenv("DATABASE_URL")
 
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+# Si no existe, usa tu conexión directa
+if not database_url:
+    database_url = "postgresql://libreria_pl1j_user:xkfwjqDgt5sQH4aJowvMMcdPGDnx9vYA@dpg-d6g8ojfgi27c738ruh8g-a/libreria_pl1j"
+
+# Fix para SQLAlchemy en algunos entornos
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# Modelo de la tabla
+# Modelo de tabla
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     titulo = db.Column(db.String(200))
     contenido = db.Column(db.Text)
 
-# Crear tablas automáticamente al iniciar
+# Crear tablas
 with app.app_context():
     db.create_all()
 
@@ -40,6 +48,5 @@ def add():
 
     return redirect("/")
 
-# Ejecutar app localmente (Render usa Gunicorn)
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run() 
